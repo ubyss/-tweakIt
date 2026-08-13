@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowUpRight, ChevronDown, LayoutGrid } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApp } from "@/lib/app-context";
@@ -11,6 +10,7 @@ import {
   tools,
   type CategoryDefinition,
 } from "@/lib/catalog";
+import { HardLink } from "../HardLink";
 import { ToolIcon } from "../ToolIcon";
 
 type CategoryCardProps = {
@@ -62,16 +62,16 @@ export function CategoryCard({ category, open, onToggle, onClose }: CategoryCard
       <div className="category-card-popover" hidden={!open}>
         <div className="category-card-tools">
           {categoryTools.map((tool) => (
-            <Link key={tool.id} href={`/tools/${tool.slug}`} onClick={onClose}>
+            <HardLink key={tool.id} href={`/tools/${tool.slug}`} onNavigate={onClose}>
               {localizeTool(tool, locale).name}
               <ArrowUpRight size={13} />
-            </Link>
+            </HardLink>
           ))}
-          <Link className="category-card-view-all" href={`/category/${category.slug}`} onClick={onClose}>
+          <HardLink className="category-card-view-all" href={`/category/${category.slug}`} onNavigate={onClose}>
             <LayoutGrid size={14} />
             <span>{locale === "pt-BR" ? "Ver categoria" : "View category"}</span>
             <ArrowUpRight size={14} />
-          </Link>
+          </HardLink>
         </div>
       </div>
     </div>

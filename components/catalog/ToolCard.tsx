@@ -1,30 +1,27 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { getCategoryById, localizeCategory, localizeTool, type ToolDefinition } from "@/lib/catalog";
+import { HardLink } from "../HardLink";
 import { ToolIcon } from "../ToolIcon";
 
 export function ToolCard({ tool, showCategory = false }: { tool: ToolDefinition; showCategory?: boolean }) {
-  const router = useRouter();
   const { locale, copy, favorites, toggleFavorite } = useApp();
   const localized = localizeTool(tool, locale);
   const category = getCategoryById(tool.category);
   const isFavorite = favorites.includes(tool.id);
   const href = `/tools/${tool.slug}`;
-  const prefetch = () => router.prefetch(href);
   return (
     <article className="tool-card" data-category={tool.category}>
-      <Link className="tool-card-link" href={href} onPointerEnter={prefetch} onFocus={prefetch}>
+      <HardLink className="tool-card-link" href={href}>
         <span className="tool-card-icon"><ToolIcon name={tool.icon} size={21} strokeWidth={1.8} /></span>
         <span className="tool-card-content">
           <span className="tool-card-name">{localized.name}</span>
           <span className="tool-card-description">{localized.description}</span>
           {showCategory && category && <span className="tool-card-category">{localizeCategory(category, locale).name}</span>}
         </span>
-      </Link>
+      </HardLink>
       {tool.isFavoriteCompatible && (
         <button
           className={`favorite-button ${isFavorite ? "is-favorite" : ""}`}

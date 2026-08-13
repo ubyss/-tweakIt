@@ -1,20 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Command, Heart, Home, LayoutGrid, Menu, Monitor, Moon, Search, Sun, X } from "lucide-react";
 import { useApp, type Theme } from "@/lib/app-context";
 import { categories, localizeCategory, localizeTool, tools } from "@/lib/catalog";
+import { HardLink } from "./HardLink";
 import { ToolIcon } from "./ToolIcon";
 import { CommandPalette } from "./search/CommandPalette";
 
 function Brand() {
   return (
-    <Link href="/" className="brand" aria-label="TweakIt — início">
+    <HardLink href="/" className="brand" aria-label="TweakIt — início">
       <span className="brand-mark"><span /><span /><span /><span /></span>
       <span>TweakIt</span>
-    </Link>
+    </HardLink>
   );
 }
 
@@ -74,7 +74,7 @@ function SidebarContent({ close }: { close?: () => void }) {
 
   return (
     <nav className="side-nav" aria-label={copy.nav.categories}>
-      <Link href="/" onClick={close} className={pathname === "/" ? "is-active" : ""}><Home size={18} /><span>{copy.nav.home}</span></Link>
+      <HardLink href="/" onNavigate={close} className={pathname === "/" ? "is-active" : ""}><Home size={18} /><span>{copy.nav.home}</span></HardLink>
       <p>{copy.nav.categories}</p>
       {categories.map((category) => {
         const categoryTools = tools.filter((tool) => tool.category === category.id);
@@ -93,19 +93,25 @@ function SidebarContent({ close }: { close?: () => void }) {
             </button>
             <div className="side-category-panel" aria-hidden={!isOpen}>
               <div className="side-category-tools">
-                <Link
+                <HardLink
                   href={`/category/${category.slug}`}
-                  onClick={close}
+                  onNavigate={close}
                   className={`side-category-view-all${pathname === `/category/${category.slug}` ? " is-active" : ""}`}
                   tabIndex={isOpen ? undefined : -1}
                 >
                   <LayoutGrid size={14} />
                   <span>{locale === "pt-BR" ? "Ver todas" : "View all"}</span>
-                </Link>
+                </HardLink>
                 {categoryTools.map((tool) => (
-                  <Link key={tool.id} href={`/tools/${tool.slug}`} onClick={close} className={pathname === `/tools/${tool.slug}` ? "is-active" : ""} tabIndex={isOpen ? undefined : -1}>
+                  <HardLink
+                    key={tool.id}
+                    href={`/tools/${tool.slug}`}
+                    onNavigate={close}
+                    className={pathname === `/tools/${tool.slug}` ? "is-active" : ""}
+                    tabIndex={isOpen ? undefined : -1}
+                  >
                     {localizeTool(tool, locale).name}
-                  </Link>
+                  </HardLink>
                 ))}
               </div>
             </div>
@@ -113,7 +119,7 @@ function SidebarContent({ close }: { close?: () => void }) {
         );
       })}
       <p className="side-nav-divider" />
-      <Link href="/favorites" data-nav="favorites" onClick={close} className={pathname === "/favorites" ? "is-active" : ""}><Heart size={18} /><span>{copy.nav.favorites}</span></Link>
+      <HardLink href="/favorites" data-nav="favorites" onNavigate={close} className={pathname === "/favorites" ? "is-active" : ""}><Heart size={18} /><span>{copy.nav.favorites}</span></HardLink>
     </nav>
   );
 }
