@@ -1,14 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { AppContext, type Theme } from "@/lib/app-context";
 import { dictionary, I18nContext, type Locale, type Messages } from "@/lib/i18n";
+
 const preferencesKey = "tweakit:preferences:v1";
 const favoritesKey = "tweakit:favorites:v1";
 const recentsKey = "tweakit:recents:v1";
 const legacyPreferencesKey = "toolsy:preferences:v1";
 const legacyFavoritesKey = "toolsy:favorites:v1";
 const legacyRecentsKey = "toolsy:recents:v1";
+
+type StoredState = {
+  locale: Locale;
+  theme: Theme;
+  favorites: string[];
+  recents: string[];
+};
+
+const defaultStoredState: StoredState = {
+  locale: "pt-BR",
+  theme: "system",
+  favorites: [],
+  recents: [],
+};
+
+let sessionStore: StoredState | null = null;
 
 function readArray(key: string, legacyKey: string) {
   try {
@@ -25,44 +42,53 @@ function applyTheme(theme: Theme) {
   document.documentElement.style.colorScheme = dark ? "dark" : "light";
 }
 
-function readStoredState() {
+function readStoredState(): StoredState {
   try {
     const preferences = JSON.parse(localStorage.getItem(preferencesKey) ?? localStorage.getItem(legacyPreferencesKey) ?? "{}") as { locale?: unknown; theme?: unknown };
     const locale: Locale = preferences.locale === "en" || preferences.locale === "pt-BR" ? preferences.locale : navigator.language.toLowerCase().startsWith("pt") ? "pt-BR" : "en";
     const theme: Theme = preferences.theme === "light" || preferences.theme === "dark" || preferences.theme === "system" ? preferences.theme : "system";
     return { locale, theme, favorites: readArray(favoritesKey, legacyFavoritesKey), recents: readArray(recentsKey, legacyRecentsKey).slice(0, 6) };
   } catch {
-    return { locale: "pt-BR" as Locale, theme: "system" as Theme, favorites: [] as string[], recents: [] as string[] };
+    return { ...defaultStoredState };
   }
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("pt-BR");
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [recents, setRecents] = useState<string[]>([]);
-  const [commandOpen, setCommandOpen] = useState(false);
-  const [preferencesReady, setPreferencesReady] = useState(false);
+function ensureSessionStore(): StoredState {
+  if (!sessionStore) sessionStore = readStoredState();
+  return sessionStore;
+}
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const stored = readStoredState();
-      setLocaleState(stored.locale);
-      setThemeState(stored.theme);
-      setFavorites(stored.favorites);
-      setRecents(stored.recents);
-      setPreferencesReady(true);
-    }, 0);
-    return () => window.clearTimeout(timer);
+function patchSessionStore(patch: Partial<StoredState>) {
+  sessionStore = { ...ensureSessionStore(), ...patch };
+}
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const [locale, setLocaleState] = useState<Locale>(() => sessionStore?.locale ?? "pt-BR");
+  const [theme, setThemeState] = useState<Theme>(() => sessionStore?.theme ?? "system");
+  const [favorites, setFavorites] = useState<string[]>(() => sessionStore?.favorites ?? []);
+  const [recents, setRecents] = useState<string[]>(() => sessionStore?.recents ?? []);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [storageReady, setStorageReady] = useState(() => sessionStore !== null);
+
+  useLayoutEffect(() => {
+    const stored = ensureSessionStore();
+    setLocaleState(stored.locale);
+    setThemeState(stored.theme);
+    setFavorites(stored.favorites);
+    setRecents(stored.recents);
+    setStorageReady(true);
   }, []);
 
   useEffect(() => {
     document.documentElement.lang = locale;
-    if (!preferencesReady) return;
+    if (!storageReady) return;
     try {
       localStorage.setItem(preferencesKey, JSON.stringify({ locale, theme }));
-    } catch { return; }
-  }, [locale, preferencesReady, theme]);
+      patchSessionStore({ locale, theme });
+    } catch {
+      return;
+    }
+  }, [locale, storageReady, theme]);
 
   useEffect(() => {
     applyTheme(theme);
@@ -88,6 +114,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const toggleFavorite = useCallback((id: string) => {
     setFavorites(current => {
       const next = current.includes(id) ? current.filter(item => item !== id) : [id, ...current];
+      patchSessionStore({ favorites: next });
       try { localStorage.setItem(favoritesKey, JSON.stringify(next)); } catch { return next; }
       return next;
     });
@@ -95,13 +122,27 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const addRecent = useCallback((id: string) => {
     setRecents(current => {
       const next = [id, ...current.filter(item => item !== id)].slice(0, 6);
+      patchSessionStore({ recents: next });
       try { localStorage.setItem(recentsKey, JSON.stringify(next)); } catch { return next; }
       return next;
     });
   }, []);
 
   const i18nValue = useMemo(() => ({ locale, copy: dictionary[locale] as Messages, setLocale }), [locale, setLocale]);
-  const value = useMemo(() => ({ locale, copy: dictionary[locale] as Messages, setLocale, theme, setTheme, favorites, recents, toggleFavorite, addRecent, commandOpen, setCommandOpen }), [locale, theme, favorites, recents, toggleFavorite, addRecent, commandOpen, setTheme, setLocale]);
+  const value = useMemo(() => ({
+    locale,
+    copy: dictionary[locale] as Messages,
+    setLocale,
+    theme,
+    setTheme,
+    favorites,
+    recents,
+    storageReady,
+    toggleFavorite,
+    addRecent,
+    commandOpen,
+    setCommandOpen,
+  }), [locale, theme, favorites, recents, storageReady, toggleFavorite, addRecent, commandOpen, setTheme, setLocale]);
 
   return (
     <I18nContext.Provider value={i18nValue}>

@@ -13,6 +13,7 @@ export type AppContextValue = {
   setTheme: (theme: Theme) => void;
   favorites: readonly string[];
   recents: readonly string[];
+  storageReady: boolean;
   toggleFavorite: (id: string) => void;
   addRecent: (id: string) => void;
   commandOpen: boolean;
