@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# openai / codex local hosting metadata
+.openai/
+
 /dist/
 /.wrangler/
 /outputs/
