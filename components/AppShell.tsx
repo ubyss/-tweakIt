@@ -80,7 +80,7 @@ function SidebarContent({ close }: { close?: () => void }) {
         const categoryTools = tools.filter((tool) => tool.category === category.id);
         const isOpen = openCategoryId === category.id;
         return (
-          <div className={`side-category${isOpen ? " is-open" : ""}`} key={category.id}>
+          <div className={`side-category${isOpen ? " is-open" : ""}`} data-category={category.id} key={category.id}>
             <button
               type="button"
               className="side-category-trigger"
@@ -113,7 +113,7 @@ function SidebarContent({ close }: { close?: () => void }) {
         );
       })}
       <p className="side-nav-divider" />
-      <Link href="/favorites" onClick={close} className={pathname === "/favorites" ? "is-active" : ""}><Heart size={18} /><span>{copy.nav.favorites}</span></Link>
+      <Link href="/favorites" data-nav="favorites" onClick={close} className={pathname === "/favorites" ? "is-active" : ""}><Heart size={18} /><span>{copy.nav.favorites}</span></Link>
     </nav>
   );
 }

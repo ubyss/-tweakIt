@@ -8,7 +8,7 @@ import { SearchBox } from "../search/SearchBox";
 export function NotFoundPage() {
   const { copy } = useApp();
   return (
-    <div className="not-found-page page-container">
+    <div className="not-found-page page-container page-cascade">
       <div className="not-found-code">404</div>
       <SearchX size={32} />
       <h1>{copy.notFound.title}</h1>

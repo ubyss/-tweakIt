@@ -16,7 +16,7 @@ export function ToolPageShell({ tool, children }: { tool: ToolDefinition; childr
   const isNetworkTool = tool.processing === "network";
   useEffect(() => addRecent(tool.id), [tool.id, addRecent]);
   return (
-    <div className="tool-page page-container">
+    <div className="tool-page page-container page-cascade" data-category={tool.category}>
       <nav className="breadcrumb" aria-label="Breadcrumb">
         <Link href="/">{copy.nav.home}</Link><ChevronRight size={14} />
         {category && <><Link href={`/category/${category.slug}`}>{localizeCategory(category, locale).name}</Link><ChevronRight size={14} /></>}

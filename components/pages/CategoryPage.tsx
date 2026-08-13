@@ -24,10 +24,15 @@ export function CategoryPage({ category, tools }: { category: CategoryDefinition
     });
   }, [deferredQuery, tools]);
   return (
-    <div>
-      <div className="page-container category-page">
+    <div className="category-page" data-category={category.id}>
+      <div className="page-container page-cascade">
         <nav className="breadcrumb" aria-label="Breadcrumb"><Link href="/">{copy.nav.home}</Link><ChevronRight size={14} /><span aria-current="page">{localized.name}</span></nav>
-        <header className="category-header"><p className="category-overline">{copy.nav.categories}</p><h1>{localized.name}</h1><p>{localized.description}</p><span>{tools.length} {tools.length === 1 ? copy.category.tool : copy.category.tools}</span></header>
+        <header className="category-header">
+          <p className="category-overline">{copy.nav.categories}</p>
+          <h1>{localized.name}</h1>
+          <p>{localized.description}</p>
+          <span>{tools.length} {tools.length === 1 ? copy.category.tool : copy.category.tools}</span>
+        </header>
         <div className="category-filter"><Search size={19} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder={copy.category.filter} aria-label={copy.category.filter} /></div>
         {filtered.length > 0 ? <ToolGrid tools={filtered} /> : <div className="empty-state"><Search size={28} /><h2>{copy.category.empty}</h2><p>{query}</p></div>}
       </div>

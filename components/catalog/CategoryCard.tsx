@@ -44,7 +44,7 @@ export function CategoryCard({ category, open, onToggle, onClose }: CategoryCard
   }, [open, onClose]);
 
   return (
-    <div className={`category-card${open ? " is-open" : ""}`} ref={cardRef}>
+    <div className={`category-card${open ? " is-open" : ""}`} data-category={category.id} ref={cardRef}>
       <button
         type="button"
         className="category-card-trigger"

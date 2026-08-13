@@ -16,7 +16,7 @@ export function ToolCard({ tool, showCategory = false }: { tool: ToolDefinition;
   const href = `/tools/${tool.slug}`;
   const prefetch = () => router.prefetch(href);
   return (
-    <article className="tool-card">
+    <article className="tool-card" data-category={tool.category}>
       <Link className="tool-card-link" href={href} onPointerEnter={prefetch} onFocus={prefetch}>
         <span className="tool-card-icon"><ToolIcon name={tool.icon} size={21} strokeWidth={1.8} /></span>
         <span className="tool-card-content">

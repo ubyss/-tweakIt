@@ -72,6 +72,7 @@ export function SearchBox({ autoFocus, compact, initialQuery = "", category, onN
                 role="option"
                 aria-selected={index === active}
                 className={`search-result ${index === active ? "is-active" : ""}`}
+                data-category={result.category}
                 onMouseEnter={() => setActive(index)}
                 onClick={() => open(index)}
               >
