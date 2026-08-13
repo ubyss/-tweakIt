@@ -9,19 +9,29 @@ import {
 } from "react";
 import {
   AlertCircle,
+  AlignJustify,
   ArrowDown,
   ArrowUp,
+  CaseUpper,
   Check,
   Copy,
   Download,
   Eraser,
+  Link,
+  List,
+  Minimize2,
   Plus,
+  RemoveFormatting,
   Search,
   Settings2,
+  Sparkles,
   Trash2,
+  Type,
   WandSparkles,
+  WholeWord,
+  type LucideIcon,
 } from "lucide-react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import {
   createOperationInstance,
   findTextMatches,
@@ -56,18 +66,20 @@ const formatterUi = {
     clearInput: "Limpar entrada",
     useResult: "Usar resultado como entrada",
     download: "Baixar .txt",
-    presets: "Presets",
-    presetsDescription: "Comece com uma sequência pronta e ajuste cada etapa.",
-    choosePreset: "Escolher preset",
-    applyPreset: "Aplicar preset",
-    appendPreset: "Adicionar ao pipeline",
+    presets: "Atalhos",
+    presetsDescription: "Aplique uma sequência pronta e ajuste depois.",
+    choosePreset: "Escolher atalho",
+    applyPreset: "Ativar atalho",
+    removePreset: "Remover atalho",
     transformations: "Transformações",
-    transformationsDescription: "As operações são executadas de cima para baixo.",
+    transformationsDescription: "Executadas de cima para baixo.",
     addTransformation: "Adicionar transformação",
-    searchTransformations: "Buscar transformações em português ou inglês…",
+    closeCatalog: "Fechar catálogo",
+    searchTransformations: "Buscar transformação…",
+    clickToAdd: "Clique para adicionar",
     chooseTransformation: "Escolher transformação",
     add: "Adicionar",
-    noTransformations: "Adicione uma transformação para começar.",
+    noTransformations: "Cole um texto acima e escolha um atalho, ou adicione uma transformação.",
     noOperationsFound: "Nenhuma transformação encontrada.",
     clearTransformations: "Limpar transformações",
     enable: "Ativar",
@@ -117,11 +129,11 @@ const formatterUi = {
     resultUpdated: "Resultado atualizado",
     inputCleared: "Entrada limpa",
     pipelineCleared: "Transformações removidas",
-    presetApplied: "Preset aplicado",
-    presetAppended: "Preset adicionado ao pipeline",
+    presetApplied: "Atalho ativado",
+    presetRemoved: "Atalho removido",
     replacementAdded: "Substituição adicionada ao pipeline",
     regexAdded: "Regex adicionada ao pipeline",
-    downloadName: "texto-toolsy.txt",
+    downloadName: "texto-tweakit.txt",
     step: "Etapa {number}",
     required: "Preencha este campo.",
     invalidValue: "Revise o valor informado.",
@@ -165,18 +177,20 @@ const formatterUi = {
     clearInput: "Clear input",
     useResult: "Use result as input",
     download: "Download .txt",
-    presets: "Presets",
-    presetsDescription: "Start with a ready-made sequence and adjust each step.",
-    choosePreset: "Choose preset",
-    applyPreset: "Apply preset",
-    appendPreset: "Append to pipeline",
+    presets: "Shortcuts",
+    presetsDescription: "Apply a ready-made sequence, then fine-tune.",
+    choosePreset: "Choose shortcut",
+    applyPreset: "Enable shortcut",
+    removePreset: "Remove shortcut",
     transformations: "Transformations",
     transformationsDescription: "Operations run from top to bottom.",
     addTransformation: "Add transformation",
-    searchTransformations: "Search transformations in English or Portuguese…",
+    closeCatalog: "Close catalog",
+    searchTransformations: "Search transformations…",
+    clickToAdd: "Click to add",
     chooseTransformation: "Choose transformation",
     add: "Add",
-    noTransformations: "Add a transformation to get started.",
+    noTransformations: "Paste text above and pick a shortcut, or add a transformation.",
     noOperationsFound: "No transformations found.",
     clearTransformations: "Clear transformations",
     enable: "Enable",
@@ -226,11 +240,11 @@ const formatterUi = {
     resultUpdated: "Result updated",
     inputCleared: "Input cleared",
     pipelineCleared: "Transformations removed",
-    presetApplied: "Preset applied",
-    presetAppended: "Preset appended to pipeline",
+    presetApplied: "Shortcut enabled",
+    presetRemoved: "Shortcut removed",
     replacementAdded: "Replacement added to pipeline",
     regexAdded: "Regex added to pipeline",
-    downloadName: "toolsy-text.txt",
+    downloadName: "tweakit-text.txt",
     step: "Step {number}",
     required: "Fill in this field.",
     invalidValue: "Check the value you entered.",
@@ -273,6 +287,27 @@ const groupOrder: readonly OperationGroup[] = [
   "cleanup",
   "other",
 ];
+
+const presetIcons: Record<string, LucideIcon> = {
+  cleanText: WandSparkles,
+  textToUrl: Link,
+  normalizeText: AlignJustify,
+  removeFormatting: RemoveFormatting,
+  prepareList: List,
+  minify: Minimize2,
+};
+
+const groupIcons: Record<OperationGroup, LucideIcon> = {
+  spacing: AlignJustify,
+  lines: List,
+  words: WholeWord,
+  substrings: Search,
+  characters: Type,
+  capitalization: CaseUpper,
+  minification: Minimize2,
+  cleanup: Sparkles,
+  other: WandSparkles,
+};
 
 function replaceToken(template: string, key: string, value: string | number) {
   return template.replace(`{${key}}`, String(value));
@@ -509,7 +544,10 @@ export function TextFormatter() {
   const [operationQuery, setOperationQuery] = useState("");
   const [selectedOperationId, setSelectedOperationId] = useState(operationList[0]?.id ?? "");
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
-  const [selectedPresetId, setSelectedPresetId] = useState(formatterPresets[0]?.id ?? "");
+  const [activePresetIds, setActivePresetIds] = useState<string[]>([]);
+  const [presetStepIds, setPresetStepIds] = useState<Record<string, string[]>>({});
+  const [workspaceTab, setWorkspaceTab] = useState<"transformations" | "search">("transformations");
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchTarget, setSearchTarget] = useState<"input" | "result">("result");
@@ -618,12 +656,13 @@ export function TextFormatter() {
     [output, advancedPattern, advancedReplacement, advancedFlags],
   );
 
-  const addOperation = () => {
-    const instance = createOperationInstance(effectiveOperationId);
+  const addOperation = (operationId = effectiveOperationId) => {
+    const instance = createOperationInstance(operationId);
     if (!instance) return;
     setSteps((current) => [...current, instance]);
     setExpandedStepId(instance.instanceId);
     setOperationQuery("");
+    setSelectedOperationId(operationId);
   };
 
   const updateStep = (instanceId: string, update: (step: OperationInstance) => OperationInstance) => {
@@ -657,12 +696,57 @@ export function TextFormatter() {
     });
   };
 
-  const applyPreset = (append: boolean) => {
-    const presetSteps = makePresetSteps(selectedPresetId);
-    if (presetSteps.length === 0) return;
-    setSteps((current) => append ? [...current, ...presetSteps] : presetSteps);
+  const removeStep = (instanceId: string) => {
+    setSteps((current) => current.filter((item) => item.instanceId !== instanceId));
+    setExpandedStepId((current) => current === instanceId ? null : current);
+    setPresetStepIds((current) => {
+      const next: Record<string, string[]> = {};
+      for (const [presetId, ids] of Object.entries(current)) {
+        const remaining = ids.filter((id) => id !== instanceId);
+        if (remaining.length > 0) next[presetId] = remaining;
+      }
+      return next;
+    });
+    setActivePresetIds((active) =>
+      active.filter((presetId) => {
+        const ids = presetStepIds[presetId] ?? [];
+        return ids.some((id) => id !== instanceId);
+      }),
+    );
+  };
+
+  const clearPipeline = () => {
+    setSteps([]);
     setExpandedStepId(null);
-    showNotice(append ? ui.presetAppended : ui.presetApplied);
+    setActivePresetIds([]);
+    setPresetStepIds({});
+  };
+
+  const togglePreset = (presetId: string) => {
+    if (activePresetIds.includes(presetId)) {
+      const idsToRemove = new Set(presetStepIds[presetId] ?? []);
+      setSteps((current) => current.filter((step) => !idsToRemove.has(step.instanceId)));
+      setActivePresetIds((current) => current.filter((id) => id !== presetId));
+      setPresetStepIds((current) => {
+        const next = { ...current };
+        delete next[presetId];
+        return next;
+      });
+      setExpandedStepId((current) => current && idsToRemove.has(current) ? null : current);
+      showNotice(ui.presetRemoved);
+      return;
+    }
+
+    const presetSteps = makePresetSteps(presetId);
+    if (presetSteps.length === 0) return;
+    setSteps((current) => [...current, ...presetSteps]);
+    setActivePresetIds((current) => [...current, presetId]);
+    setPresetStepIds((current) => ({
+      ...current,
+      [presetId]: presetSteps.map((step) => step.instanceId),
+    }));
+    setExpandedStepId(null);
+    showNotice(ui.presetApplied);
   };
 
   const copyResult = async () => {
@@ -755,11 +839,23 @@ export function TextFormatter() {
 
   return (
     <div className="formatter">
+      <div className="formatter-workspace-tabs" role="tablist" aria-label={ui.transformations}>
+        <button type="button" role="tab" aria-selected={workspaceTab === "transformations"} className={workspaceTab === "transformations" ? "is-active" : ""} onClick={() => setWorkspaceTab("transformations")}>
+          <WandSparkles size={16} />{ui.transformations}{steps.length > 0 && <span>{steps.length}</span>}
+        </button>
+        <button type="button" role="tab" aria-selected={workspaceTab === "search"} className={workspaceTab === "search" ? "is-active" : ""} onClick={() => setWorkspaceTab("search")}>
+          <Search size={16} />{ui.searchTitle}
+        </button>
+      </div>
       <div className="formatter-panels">
         <section className="formatter-panel" aria-labelledby="formatter-input-title">
           <div className="formatter-panel-header">
             <h2 id="formatter-input-title">{ui.input}</h2>
-            <TextStats text={input} locale={locale} />
+            <div className="formatter-panel-toolbar">
+              <button type="button" className="formatter-icon-button" onClick={() => { setInput(""); showNotice(ui.inputCleared); }} disabled={!input} aria-label={ui.clearInput} title={ui.clearInput}>
+                <Eraser size={16} />
+              </button>
+            </div>
           </div>
           <textarea
             ref={inputRef}
@@ -770,6 +866,7 @@ export function TextFormatter() {
             aria-label={ui.input}
             onChange={(event) => setInput(event.currentTarget.value)}
           />
+          <TextStats text={input} locale={locale} />
         </section>
         <section className="formatter-panel" aria-labelledby="formatter-result-title">
           <div className="formatter-panel-header">
@@ -777,7 +874,17 @@ export function TextFormatter() {
               <h2 id="formatter-result-title">{ui.result}</h2>
               {isProcessing && <span className="formatter-processing">{ui.processing}</span>}
             </div>
-            <TextStats text={output} locale={locale} />
+            <div className="formatter-panel-toolbar">
+              <button type="button" className="formatter-icon-button" onClick={() => { setInput(output); clearPipeline(); showNotice(ui.resultUpdated); }} disabled={!output} aria-label={ui.useResult} title={ui.useResult}>
+                <ArrowUp size={16} />
+              </button>
+              <button type="button" className="formatter-icon-button" onClick={downloadResult} disabled={!output} aria-label={ui.download} title={ui.download}>
+                <Download size={16} />
+              </button>
+              <button type="button" className="formatter-button formatter-button--primary" onClick={() => void copyResult()} disabled={!output}>
+                {notice === ui.copied ? <Check size={16} /> : <Copy size={16} />}{notice === ui.copied ? ui.copied : ui.copy}
+              </button>
+            </div>
           </div>
           <textarea
             ref={resultRef}
@@ -788,58 +895,60 @@ export function TextFormatter() {
             readOnly
             aria-label={ui.result}
           />
+          <TextStats text={output} locale={locale} />
         </section>
       </div>
 
-      <div className="formatter-actions" aria-label={ui.result}>
-        <button type="button" className="formatter-button formatter-button--primary" onClick={() => void copyResult()} disabled={!output}>
-          {notice === ui.copied ? <Check size={16} /> : <Copy size={16} />}{notice === ui.copied ? ui.copied : ui.copy}
-        </button>
-        <button type="button" className="formatter-button" onClick={() => { setInput(""); showNotice(ui.inputCleared); }} disabled={!input}>
-          <Eraser size={16} />{ui.clearInput}
-        </button>
-        <button type="button" className="formatter-button" onClick={() => { setInput(output); setSteps([]); showNotice(ui.resultUpdated); }} disabled={!output}>
-          <ArrowUp size={16} />{ui.useResult}
-        </button>
-        <button type="button" className="formatter-button" onClick={downloadResult} disabled={!output}>
-          <Download size={16} />{ui.download}
-        </button>
+      {workspaceTab === "transformations" && <div className="formatter-workspace-pane" role="tabpanel">
+      <div className="formatter-preset-chips" role="group" aria-label={ui.presets}>
+        <p className="formatter-preset-chips-title" id="formatter-presets-title">{ui.presets}</p>
+        {formatterPresets.map((preset) => {
+          const PresetIcon = presetIcons[preset.id] ?? WandSparkles;
+          const isActive = activePresetIds.includes(preset.id);
+          return (
+            <button
+              type="button"
+              key={preset.id}
+              className={`formatter-preset-chip${isActive ? " formatter-preset-chip--active" : ""}`}
+              aria-pressed={isActive}
+              title={isActive ? ui.removePreset : ui.applyPreset}
+              onClick={() => togglePreset(preset.id)}
+            >
+              <PresetIcon size={15} />
+              <span>{preset.label[locale]}</span>
+              <small>{preset.operations.length}</small>
+            </button>
+          );
+        })}
       </div>
 
-      <section className="formatter-section" aria-labelledby="formatter-presets-title">
-        <div className="formatter-section-heading">
+      <div className="formatter-pipeline-board" aria-labelledby="formatter-pipeline-title">
+        <div className="formatter-pipeline-toolbar">
           <div>
-            <p className="formatter-section-kicker"><WandSparkles size={15} />{ui.presets}</p>
-            <h3 id="formatter-presets-title">{ui.presets}</h3>
-            <p>{ui.presetsDescription}</p>
-          </div>
-        </div>
-        <div className="formatter-preset-row">
-          <label className="formatter-sr-only" htmlFor="formatter-preset-select">{ui.choosePreset}</label>
-          <select id="formatter-preset-select" className="formatter-control" value={selectedPresetId} onChange={(event) => setSelectedPresetId(event.currentTarget.value)}>
-            {formatterPresets.map((preset) => <option key={preset.id} value={preset.id}>{preset.label[locale]}</option>)}
-          </select>
-          <button type="button" className="formatter-button formatter-button--primary" onClick={() => applyPreset(false)}>{ui.applyPreset}</button>
-          <button type="button" className="formatter-button" onClick={() => applyPreset(true)}>{ui.appendPreset}</button>
-        </div>
-      </section>
-
-      <section className="formatter-section" aria-labelledby="formatter-pipeline-title">
-        <div className="formatter-section-heading formatter-section-heading--split">
-          <div>
-            <p className="formatter-section-kicker">{ui.transformations}</p>
             <h3 id="formatter-pipeline-title">{ui.transformations}</h3>
             <p>{ui.transformationsDescription}</p>
           </div>
-          {steps.length > 0 && (
-            <button type="button" className="formatter-button formatter-button--danger" onClick={() => { setSteps([]); setExpandedStepId(null); showNotice(ui.pipelineCleared); }}>
-              <Trash2 size={16} />{ui.clearTransformations}
+          <div className="formatter-pipeline-toolbar-actions">
+            <button
+              type="button"
+              className={`formatter-button${isCatalogOpen ? " formatter-button--primary" : ""}`}
+              aria-expanded={isCatalogOpen}
+              onClick={() => setIsCatalogOpen((current) => !current)}
+            >
+              {isCatalogOpen ? <Search size={16} /> : <Plus size={16} />}
+              {isCatalogOpen ? ui.closeCatalog : ui.addTransformation}
             </button>
-          )}
+            {steps.length > 0 && (
+              <button type="button" className="formatter-button formatter-button--danger" onClick={() => { clearPipeline(); showNotice(ui.pipelineCleared); }}>
+                <Trash2 size={16} />{ui.clearTransformations}
+              </button>
+            )}
+          </div>
         </div>
 
+        {isCatalogOpen && (
         <div className="formatter-operation-picker">
-          <label htmlFor="formatter-operation-search">{ui.addTransformation}</label>
+          <label className="formatter-sr-only" htmlFor="formatter-operation-search">{ui.addTransformation}</label>
           <div className="formatter-operation-filter">
             <Search size={17} aria-hidden="true" />
             <input
@@ -848,37 +957,53 @@ export function TextFormatter() {
               type="search"
               value={operationQuery}
               placeholder={ui.searchTransformations}
+              autoFocus
               onChange={(event) => setOperationQuery(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && effectiveOperationId) {
+                  event.preventDefault();
+                  addOperation(effectiveOperationId);
+                }
+              }}
             />
           </div>
-          <div className="formatter-operation-picker-row">
-            <label className="formatter-sr-only" htmlFor="formatter-operation-select">{ui.chooseTransformation}</label>
-            <select
-              id="formatter-operation-select"
-              className="formatter-control"
-              value={effectiveOperationId}
-              disabled={filteredOperations.length === 0}
-              onChange={(event) => setSelectedOperationId(event.currentTarget.value)}
-            >
+          {filteredOperations.length === 0 ? (
+            <p className="formatter-empty-inline">{ui.noOperationsFound}</p>
+          ) : (
+            <div className="formatter-operation-catalog">
               {groupOrder.map((group) => {
                 const operations = filteredOperations.filter((operation) => operation.group === group);
                 if (operations.length === 0) return null;
+                const GroupIcon = groupIcons[group];
                 return (
-                  <optgroup key={group} label={ui.groups[group]}>
-                    {operations.map((operation) => <option key={operation.id} value={operation.id}>{operation.label[locale]}</option>)}
-                  </optgroup>
+                  <section className="formatter-operation-group" key={group} aria-label={ui.groups[group]}>
+                    <p className="formatter-operation-group-name"><GroupIcon size={13} />{ui.groups[group]}</p>
+                    <div className="formatter-operation-group-chips">
+                      {operations.map((operation) => (
+                        <button
+                          type="button"
+                          className="formatter-operation-chip"
+                          key={operation.id}
+                          title={operation.description[locale]}
+                          onClick={() => addOperation(operation.id)}
+                        >
+                          {operation.label[locale]}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
                 );
               })}
-            </select>
-            <button type="button" className="formatter-button formatter-button--primary" onClick={addOperation} disabled={!effectiveOperationId}>
-              <Plus size={16} />{ui.add}
-            </button>
-          </div>
-          {filteredOperations.length === 0 && <p className="formatter-empty-inline">{ui.noOperationsFound}</p>}
+            </div>
+          )}
         </div>
+        )}
 
         {steps.length === 0 ? (
-          <div className="formatter-empty-state"><WandSparkles size={22} /><p>{ui.noTransformations}</p></div>
+          <div className="formatter-empty-state">
+            <WandSparkles size={22} />
+            <p>{ui.noTransformations}</p>
+          </div>
         ) : (
           <ol className="formatter-pipeline">
             {steps.map((step, index) => {
@@ -903,7 +1028,7 @@ export function TextFormatter() {
                     </label>
                     <div className="formatter-step-copy">
                       <strong>{operation.label[locale]}</strong>
-                      <span>{step.enabled ? ui.enabled : ui.disabled} · {operation.description[locale]}</span>
+                      <span title={operation.description[locale]}>{step.enabled ? ui.enabled : ui.disabled}</span>
                     </div>
                     <div className="formatter-step-actions">
                       {operation.fields.length > 0 && (
@@ -913,7 +1038,7 @@ export function TextFormatter() {
                       )}
                       <button type="button" className="formatter-icon-button" onClick={() => moveStep(index, -1)} disabled={index === 0} aria-label={`${ui.moveUp}: ${operation.label[locale]}`}><ArrowUp size={17} /></button>
                       <button type="button" className="formatter-icon-button" onClick={() => moveStep(index, 1)} disabled={index === steps.length - 1} aria-label={`${ui.moveDown}: ${operation.label[locale]}`}><ArrowDown size={17} /></button>
-                      <button type="button" className="formatter-icon-button formatter-icon-button--danger" onClick={() => setSteps((current) => current.filter((item) => item.instanceId !== step.instanceId))} aria-label={`${ui.remove}: ${operation.label[locale]}`}><Trash2 size={17} /></button>
+                      <button type="button" className="formatter-icon-button formatter-icon-button--danger" onClick={() => removeStep(step.instanceId)} aria-label={`${ui.remove}: ${operation.label[locale]}`}><Trash2 size={17} /></button>
                     </div>
                   </div>
                   {expanded && operation.fields.length > 0 && (
@@ -947,9 +1072,10 @@ export function TextFormatter() {
             })}
           </ol>
         )}
-      </section>
+      </div>
+      </div>}
 
-      <section className="formatter-section formatter-find-tools" aria-label={ui.searchTitle}>
+      {workspaceTab === "search" && <div className="formatter-section formatter-find-tools" role="tabpanel" aria-label={ui.searchTitle}>
         <details className="formatter-disclosure" open>
           <summary><Search size={17} /><span><strong>{ui.searchTitle}</strong><small>{ui.searchDescription}</small></span></summary>
           <div className="formatter-disclosure-content">
@@ -1060,9 +1186,9 @@ export function TextFormatter() {
             {advancedPreview.issue && <p className="formatter-issue formatter-issue--error" role="alert"><AlertCircle size={15} />{issueText(advancedPreview.issue, locale)}</p>}
           </div>
         </details>
-      </section>
+      </div>}
 
-      <PipelineAnalysis analyses={analyses} locale={locale} />
+      {workspaceTab === "transformations" && <PipelineAnalysis analyses={analyses} locale={locale} />}
       <p className="formatter-live-region" aria-live="polite">{notice}</p>
     </div>
   );

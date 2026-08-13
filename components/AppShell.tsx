@@ -3,17 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Command, Heart, Home, Menu, Monitor, Moon, Search, Sun, X } from "lucide-react";
-import { useApp, type Theme } from "@/app/providers";
-import { categories, localizeCategory } from "@/lib/catalog";
+import { Check, ChevronDown, Command, Heart, Home, LayoutGrid, Menu, Monitor, Moon, Search, Sun, X } from "lucide-react";
+import { useApp, type Theme } from "@/lib/app-context";
+import { categories, localizeCategory, localizeTool, tools } from "@/lib/catalog";
 import { ToolIcon } from "./ToolIcon";
 import { CommandPalette } from "./search/CommandPalette";
 
 function Brand() {
   return (
-    <Link href="/" className="brand" aria-label="Toolsy — início">
+    <Link href="/" className="brand" aria-label="TweakIt — início">
       <span className="brand-mark"><span /><span /><span /><span /></span>
-      <span>Toolsy</span>
+      <span>TweakIt</span>
     </Link>
   );
 }
@@ -62,16 +62,56 @@ function ThemeSelector() {
 function SidebarContent({ close }: { close?: () => void }) {
   const pathname = usePathname();
   const { locale, copy } = useApp();
+  const activeCategoryId = categories.find((category) => {
+    const categoryTools = tools.filter((tool) => tool.category === category.id);
+    return pathname === `/category/${category.slug}` || categoryTools.some((tool) => pathname === `/tools/${tool.slug}`);
+  })?.id ?? null;
+  const [openCategoryId, setOpenCategoryId] = useState<string | null>(activeCategoryId);
+
+  useEffect(() => {
+    setOpenCategoryId(activeCategoryId);
+  }, [activeCategoryId]);
+
   return (
     <nav className="side-nav" aria-label={copy.nav.categories}>
       <Link href="/" onClick={close} className={pathname === "/" ? "is-active" : ""}><Home size={18} /><span>{copy.nav.home}</span></Link>
       <p>{copy.nav.categories}</p>
-      {categories.map(category => (
-        <Link key={category.id} href={`/category/${category.slug}`} onClick={close} className={pathname === `/category/${category.slug}` ? "is-active" : ""}>
-          <ToolIcon name={category.icon} size={18} />
-          <span>{localizeCategory(category, locale).name}</span>
-        </Link>
-      ))}
+      {categories.map((category) => {
+        const categoryTools = tools.filter((tool) => tool.category === category.id);
+        const isOpen = openCategoryId === category.id;
+        return (
+          <div className={`side-category${isOpen ? " is-open" : ""}`} key={category.id}>
+            <button
+              type="button"
+              className="side-category-trigger"
+              aria-expanded={isOpen}
+              onClick={() => setOpenCategoryId((current) => current === category.id ? null : category.id)}
+            >
+              <ToolIcon name={category.icon} size={18} />
+              <span>{localizeCategory(category, locale).name}</span>
+              <ChevronDown className="side-category-chevron" size={15} />
+            </button>
+            <div className="side-category-panel" aria-hidden={!isOpen}>
+              <div className="side-category-tools">
+                <Link
+                  href={`/category/${category.slug}`}
+                  onClick={close}
+                  className={`side-category-view-all${pathname === `/category/${category.slug}` ? " is-active" : ""}`}
+                  tabIndex={isOpen ? undefined : -1}
+                >
+                  <LayoutGrid size={14} />
+                  <span>{locale === "pt-BR" ? "Ver todas" : "View all"}</span>
+                </Link>
+                {categoryTools.map((tool) => (
+                  <Link key={tool.id} href={`/tools/${tool.slug}`} onClick={close} className={pathname === `/tools/${tool.slug}` ? "is-active" : ""} tabIndex={isOpen ? undefined : -1}>
+                    {localizeTool(tool, locale).name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })}
       <p className="side-nav-divider" />
       <Link href="/favorites" onClick={close} className={pathname === "/favorites" ? "is-active" : ""}><Heart size={18} /><span>{copy.nav.favorites}</span></Link>
     </nav>
@@ -141,7 +181,7 @@ export function Footer() {
   return (
     <footer className="site-footer">
       <div><span className="status-dot" /> <strong>{copy.footer.privacy}</strong><span>{copy.footer.detail}</span></div>
-      <p>Toolsy · {copy.footer.built}</p>
+      <p>TweakIt · {copy.footer.built}</p>
     </footer>
   );
 }

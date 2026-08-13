@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { ArrowRight, LockKeyhole, Sparkles } from "lucide-react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import { categories, getToolById, type ToolDefinition } from "@/lib/catalog";
-import { CategoryCard } from "../catalog/CategoryCard";
+import { CategoryGrid } from "../catalog/CategoryCard";
 import { ToolGrid } from "../catalog/ToolCard";
 import { Footer } from "../AppShell";
 import { SearchBox } from "../search/SearchBox";
@@ -37,7 +37,7 @@ export function HomePage() {
         )}
         <section className="categories-section">
           <div className="section-heading section-heading-large"><div><span className="section-kicker">{favoriteTools.length || recentTools.length ? "03" : "01"}</span><h2>{copy.home.categories}</h2><p>{copy.home.categoriesSubtitle}</p></div></div>
-          <div className="category-grid">{categories.map(category => <CategoryCard key={category.id} category={category} />)}</div>
+          <CategoryGrid categories={categories} />
         </section>
       </div>
       <Footer />

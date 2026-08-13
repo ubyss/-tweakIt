@@ -12,7 +12,7 @@ export const dictionary = {
     theme: { light: "Claro", dark: "Escuro", system: "Sistema" },
     home: {
       eyebrow: "Ferramentas simples. Trabalho resolvido.",
-      title: "Uma ferramenta para cada tarefa.",
+      title: "Ferramentas simples para transformar qualquer coisa.",
       subtitle: "Conversores, formatadores, ferramentas de desenvolvimento e utilitários rápidos em um só lugar.",
       categories: "Explore por categoria",
       categoriesSubtitle: "Encontre o caminho certo sem atravessar uma lista interminável.",
@@ -38,6 +38,8 @@ export const dictionary = {
     tool: {
       local: "Processado localmente no seu navegador",
       localDetail: "O conteúdo desta ferramenta não é enviado a nenhum servidor.",
+      network: "Cotações ao vivo via API pública",
+      networkDetail: "O valor digitado fica no seu navegador; só a cotação é buscada online.",
       related: "Ferramentas relacionadas",
       favorite: "Adicionar aos favoritos",
       unfavorite: "Remover dos favoritos",
@@ -89,7 +91,7 @@ export const dictionary = {
     theme: { light: "Light", dark: "Dark", system: "System" },
     home: {
       eyebrow: "Simple tools. Work done.",
-      title: "A tool for every task.",
+      title: "Everything you need to tweak.",
       subtitle: "Converters, formatters, developer tools and quick utilities in one place.",
       categories: "Explore by category",
       categoriesSubtitle: "Find the right path without wading through an endless list.",
@@ -115,6 +117,8 @@ export const dictionary = {
     tool: {
       local: "Processed locally in your browser",
       localDetail: "The content in this tool is never sent to a server.",
+      network: "Live rates from a public API",
+      networkDetail: "Your amount stays in the browser; only the exchange rate is fetched online.",
       related: "Related tools",
       favorite: "Add to favorites",
       unfavorite: "Remove from favorites",
