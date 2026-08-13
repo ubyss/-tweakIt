@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import tailwindcss from "@tailwindcss/vite";
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import { sites } from "./build/sites-vite-plugin";
@@ -60,7 +61,7 @@ export default defineConfig(async () => {
   if (deployToVercel) {
     const { nitro } = await import("nitro/vite");
     return {
-      plugins: [vinext(), sites(), nitro()],
+      plugins: [vinext(), sites(), tailwindcss(), nitro()],
     };
   }
 
@@ -73,6 +74,7 @@ export default defineConfig(async () => {
     plugins: [
       vinext(),
       sites(),
+      tailwindcss(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         config: localBindingConfig,

@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "lucide-react": "^1.31.0",
     "qrcode": "^1.5.4",
     "react": "19.2.6",
@@ -25,7 +26,6 @@
     "@cloudflare/vite-plugin": "1.37.1",
     "@eslint/js": "9.39.4",
     "@next/eslint-plugin-next": "16.2.6",
-    "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
@@ -38,7 +38,7 @@
     "globals": "16.4.0",
     "nitro": "^3.0.260610-beta",
     "react-server-dom-webpack": "19.2.6",
-    "tailwindcss": "4.2.1",
+    "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",
     "typescript-eslint": "8.59.3",
     "vinext": "1.0.0-beta.2",
