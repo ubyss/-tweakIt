@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, SearchX } from "lucide-react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import { SearchBox } from "../search/SearchBox";
 
 export function NotFoundPage() {

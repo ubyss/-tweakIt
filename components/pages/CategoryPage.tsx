@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import { localizeCategory, type CategoryDefinition, type ToolDefinition } from "@/lib/catalog";
 import { normalizeSearchText } from "@/lib/search";
 import { Footer } from "../AppShell";

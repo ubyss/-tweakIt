@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Command, CornerDownLeft } from "lucide-react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import { SearchBox } from "./SearchBox";
 
 export function CommandPalette() {

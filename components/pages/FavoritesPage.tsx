@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Heart } from "lucide-react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import { getToolById, type ToolDefinition } from "@/lib/catalog";
 import { Footer } from "../AppShell";
 import { ToolGrid } from "../catalog/ToolCard";

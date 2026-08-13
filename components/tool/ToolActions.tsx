@@ -2,7 +2,7 @@
 
 import { Check, Clipboard, Download, Eraser, Repeat2 } from "lucide-react";
 import { useState } from "react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 
 export function CopyButton({ value, label }: { value: string; label?: string }) {
   const { copy } = useApp();
@@ -36,7 +36,7 @@ export function SwapButton({ onSwap, disabled }: { onSwap: () => void; disabled?
   return <button className="button button-ghost" onClick={onSwap} disabled={disabled}><Repeat2 size={16} />{copy.tool.swap}</button>;
 }
 
-export function DownloadButton({ value, fileName = "toolsy-result.txt", label }: { value: string; fileName?: string; label?: string }) {
+export function DownloadButton({ value, fileName = "tweakit-result.txt", label }: { value: string; fileName?: string; label?: string }) {
   const { copy } = useApp();
   const download = () => {
     const url = URL.createObjectURL(new Blob([value], { type: "text/plain;charset=utf-8" }));

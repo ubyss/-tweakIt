@@ -28,7 +28,7 @@ export function createOperationInstance(operationId: string): OperationInstance 
   const definition = getOperationDefinition(operationId);
   if (!definition) return undefined;
   const params = cloneParams(definition.defaults);
-  if ((operationId === "shuffleLines" || operationId === "shuffleWords") && params.seed === "toolsy") {
+  if ((operationId === "shuffleLines" || operationId === "shuffleWords") && params.seed === "tweakit") {
     return {
       instanceId: createInstanceId(operationId),
       operationId,

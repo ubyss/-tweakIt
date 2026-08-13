@@ -1,32 +1,18 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AppContext, type Theme } from "@/lib/app-context";
 import { dictionary, I18nContext, type Locale, type Messages } from "@/lib/i18n";
+const preferencesKey = "tweakit:preferences:v1";
+const favoritesKey = "tweakit:favorites:v1";
+const recentsKey = "tweakit:recents:v1";
+const legacyPreferencesKey = "toolsy:preferences:v1";
+const legacyFavoritesKey = "toolsy:favorites:v1";
+const legacyRecentsKey = "toolsy:recents:v1";
 
-export type Theme = "light" | "dark" | "system";
-
-type AppContextValue = {
-  locale: Locale;
-  copy: Messages;
-  setLocale: (locale: Locale) => void;
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  favorites: readonly string[];
-  recents: readonly string[];
-  toggleFavorite: (id: string) => void;
-  addRecent: (id: string) => void;
-  commandOpen: boolean;
-  setCommandOpen: (open: boolean) => void;
-};
-
-const AppContext = createContext<AppContextValue | null>(null);
-const preferencesKey = "toolsy:preferences:v1";
-const favoritesKey = "toolsy:favorites:v1";
-const recentsKey = "toolsy:recents:v1";
-
-function readArray(key: string) {
+function readArray(key: string, legacyKey: string) {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(key) ?? "[]");
+    const value: unknown = JSON.parse(localStorage.getItem(key) ?? localStorage.getItem(legacyKey) ?? "[]");
     return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
   } catch {
     return [];
@@ -41,10 +27,10 @@ function applyTheme(theme: Theme) {
 
 function readStoredState() {
   try {
-    const preferences = JSON.parse(localStorage.getItem(preferencesKey) ?? "{}") as { locale?: unknown; theme?: unknown };
+    const preferences = JSON.parse(localStorage.getItem(preferencesKey) ?? localStorage.getItem(legacyPreferencesKey) ?? "{}") as { locale?: unknown; theme?: unknown };
     const locale: Locale = preferences.locale === "en" || preferences.locale === "pt-BR" ? preferences.locale : navigator.language.toLowerCase().startsWith("pt") ? "pt-BR" : "en";
     const theme: Theme = preferences.theme === "light" || preferences.theme === "dark" || preferences.theme === "system" ? preferences.theme : "system";
-    return { locale, theme, favorites: readArray(favoritesKey), recents: readArray(recentsKey).slice(0, 6) };
+    return { locale, theme, favorites: readArray(favoritesKey, legacyFavoritesKey), recents: readArray(recentsKey, legacyRecentsKey).slice(0, 6) };
   } catch {
     return { locale: "pt-BR" as Locale, theme: "system" as Theme, favorites: [] as string[], recents: [] as string[] };
   }
@@ -122,10 +108,4 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AppContext.Provider value={value}>{children}</AppContext.Provider>
     </I18nContext.Provider>
   );
-}
-
-export function useApp() {
-  const value = useContext(AppContext);
-  if (!value) throw new Error("AppContext is unavailable");
-  return value;
 }

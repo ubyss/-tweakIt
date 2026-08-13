@@ -1366,9 +1366,9 @@ const otherOperations: readonly RegisteredOperation[] = [
     enDescription: "Deterministically shuffles lines using a seed.",
     ptKeywords: ["linhas aleatórias", "misturar linhas"],
     enKeywords: ["random lines", "mix lines"],
-    defaults: { seed: "toolsy" },
+    defaults: { seed: "tweakit" },
     fields: [textField("seed", "Seed", "Seed", true)],
-    transform: (input, params) => asText(transformLinesWithFinalBreak(input, (lines) => seededShuffle(lines, stringParam(params, "seed", "toolsy")))),
+    transform: (input, params) => asText(transformLinesWithFinalBreak(input, (lines) => seededShuffle(lines, stringParam(params, "seed", "tweakit")))),
   }),
   operation({
     id: "shuffleWords",
@@ -1379,11 +1379,11 @@ const otherOperations: readonly RegisteredOperation[] = [
     enDescription: "Shuffles words while preserving separators and using a seed.",
     ptKeywords: ["palavras aleatórias", "misturar palavras"],
     enKeywords: ["random words", "mix words"],
-    defaults: { seed: "toolsy" },
+    defaults: { seed: "tweakit" },
     fields: [textField("seed", "Seed", "Seed", true)],
     transform: (input, params) => {
       const { words, separators } = wordsAndSeparators(input);
-      return asText(joinWordsAndSeparators(seededShuffle(words, stringParam(params, "seed", "toolsy")), separators));
+      return asText(joinWordsAndSeparators(seededShuffle(words, stringParam(params, "seed", "tweakit")), separators));
     },
   }),
   operation({

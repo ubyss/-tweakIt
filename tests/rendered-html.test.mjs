@@ -15,13 +15,13 @@ async function render(pathname = "/") {
   );
 }
 
-test("renders the Toolsy home page", async () => {
+test("renders the TweakIt home page", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
-  assert.match(html, /<title>Toolsy[^<]*Uma ferramenta para cada tarefa[^<]*<\/title>/i);
-  assert.match(html, /Uma ferramenta para cada tarefa/);
+  assert.match(html, /<title>TweakIt[^<]*Ferramentas simples para transformar qualquer coisa[^<]*<\/title>/i);
+  assert.match(html, /Ferramentas simples para transformar qualquer coisa/);
   assert.match(html, /O que você precisa fazer/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });

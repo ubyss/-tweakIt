@@ -3,7 +3,7 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowRight, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import { getCategoryById, localizeCategory, type CategoryId } from "@/lib/catalog";
 import { searchTools } from "@/lib/search";
 import { ToolIcon } from "../ToolIcon";

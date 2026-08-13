@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import { getCategoryById, localizeCategory, localizeTool, type ToolDefinition } from "@/lib/catalog";
 import { ToolIcon } from "../ToolIcon";
 

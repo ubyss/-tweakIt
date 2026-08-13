@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: localized.name,
     description: localized.description,
     alternates: { canonical: `/tools/${tool.slug}` },
-    openGraph: { title: `${localized.name} · Toolsy`, description: localized.description, url: `/tools/${tool.slug}` },
+    openGraph: { title: `${localized.name} · TweakIt`, description: localized.description, url: `/tools/${tool.slug}` },
   };
 }
 

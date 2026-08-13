@@ -2,7 +2,7 @@
 
 import { Download, QrCode } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import type { ToolDefinition } from "@/lib/catalog";
 
 const labels = {
@@ -16,7 +16,7 @@ export function QrTool({ tool }: { tool: ToolDefinition }) {
   const { locale } = useApp();
   const ui = labels[locale];
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [content, setContent] = useState("https://toolsy.local");
+  const [content, setContent] = useState("https://tweakit.local");
   const [ssid, setSsid] = useState("");
   const [password, setPassword] = useState("");
   const [security, setSecurity] = useState("WPA");
@@ -38,7 +38,7 @@ export function QrTool({ tool }: { tool: ToolDefinition }) {
   const download = () => {
     const link = document.createElement("a");
     link.href = canvasRef.current?.toDataURL("image/png") ?? "";
-    link.download = "toolsy-qr-code.png";
+    link.download = "tweakit-qr-code.png";
     link.click();
   };
 

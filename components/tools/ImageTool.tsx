@@ -2,7 +2,7 @@
 
 import { Download, Image as ImageIcon, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import type { ToolDefinition } from "@/lib/catalog";
 import { CopyButton } from "@/components/tool/ToolActions";
 
@@ -140,7 +140,7 @@ export function ImageTool({ tool }: { tool: ToolDefinition }) {
     if (!result || tool.id === "base64-image-converter" && !result.startsWith("data:image")) return;
     const link = document.createElement("a");
     link.href = result;
-    link.download = `toolsy-${tool.id}.${result.includes("image/jpeg") ? "jpg" : result.includes("image/webp") ? "webp" : "png"}`;
+    link.download = `tweakit-${tool.id}.${result.includes("image/jpeg") ? "jpg" : result.includes("image/webp") ? "webp" : "png"}`;
     link.click();
   };
   const pickColorAt = (clientX: number, clientY: number, target: HTMLImageElement) => {
