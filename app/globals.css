@@ -453,26 +453,31 @@ kbd {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows .28s ease;
+  pointer-events: none;
 }
 
 .side-category.is-open .side-category-panel {
   grid-template-rows: 1fr;
+  pointer-events: auto;
 }
 
 .side-category-tools {
   display: flex;
+  min-height: 0;
   margin: 2px 0 7px 18px;
   padding-left: 13px;
   flex-direction: column;
   border-left: 1px solid color-mix(in srgb, var(--category-color, var(--line)) 35%, var(--line));
   overflow: hidden;
   opacity: 0;
+  visibility: hidden;
   transform: translateY(-4px);
-  transition: opacity .2s ease, transform .28s ease;
+  transition: opacity .2s ease, transform .28s ease, visibility .2s ease;
 }
 
 .side-category.is-open .side-category-tools {
   opacity: 1;
+  visibility: visible;
   transform: translateY(0);
 }
 
