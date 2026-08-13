@@ -20,7 +20,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { useApp } from "@/app/providers";
+import { useApp } from "@/lib/app-context";
 import {
   ClearButton,
   CopyButton,
@@ -181,6 +181,10 @@ const labels = {
   secret: t("Chave secreta", "Secret key"),
   originalJson: t("JSON original", "Original JSON"),
   comparisonJson: t("JSON para comparar", "JSON to compare"),
+  originalText: t("Texto original", "Original text"),
+  comparisonText: t("Texto para comparar", "Text to compare"),
+  ignoreWhitespace: t("Ignorar espaços extras", "Ignore extra whitespace"),
+  ignoreCase: t("Ignorar maiúsculas e minúsculas", "Ignore letter case"),
   baseUrl: t("URL base", "Base URL"),
   queryParameters: t("Parâmetros, um por linha", "Parameters, one per line"),
   title: t("Título", "Title"),
@@ -254,8 +258,8 @@ const modeLabels: Readonly<Record<string, LocalText>> = {
 
 const placeholders: Readonly<Record<string, LocalText | string>> = {
   base64: t("Digite um texto ou cole Base64…", "Type text or paste Base64…"),
-  "url-encoder": "https://toolsy.app/busca?q=ferramentas úteis",
-  "html-entities": "<section aria-label=\"Toolsy\">Texto & conteúdo</section>",
+  "url-encoder": "https://tweakit.app/busca?q=ferramentas úteis",
+  "html-entities": "<section aria-label=\"TweakIt\">Texto & conteúdo</section>",
   "number-base-converter": t("Ex.: 255 ou FF", "E.g. 255 or FF"),
   "text-binary-converter": t("Texto ou bytes como 01010100 01101111…", "Text or bytes such as 01010100 01101111…"),
   "unix-timestamp-converter": t("Timestamp ou data, ex.: 1735689600", "Timestamp or date, e.g. 1735689600"),
@@ -265,27 +269,28 @@ const placeholders: Readonly<Record<string, LocalText | string>> = {
   "hash-generator": t("Texto do qual calcular o hash…", "Text to hash…"),
   "hmac-generator": t("Mensagem que será assinada…", "Message to sign…"),
   "password-strength-analyzer": t("Digite uma senha para analisar…", "Enter a password to analyze…"),
-  "json-formatter": "{\n  \"tool\": \"Toolsy\"\n}",
-  "json-minifier": "{ \"tool\": \"Toolsy\", \"ready\": true }",
+  "json-formatter": "{\n  \"tool\": \"TweakIt\"\n}",
+  "json-minifier": "{ \"tool\": \"TweakIt\", \"ready\": true }",
   "json-validator": t("Cole um documento JSON…", "Paste a JSON document…"),
   "json-to-yaml": t("Cole um documento JSON…", "Paste a JSON document…"),
   "json-to-xml": t("Cole um documento JSON…", "Paste a JSON document…"),
-  "json-to-csv": "[{ \"name\": \"Toolsy\", \"ready\": true }]",
-  "yaml-to-json": "tool: Toolsy\nready: true",
-  "xml-to-json": "<tool><name>Toolsy</name><ready>true</ready></tool>",
-  "csv-table-viewer": "name,status\nToolsy,ready",
+  "json-to-csv": "[{ \"name\": \"TweakIt\", \"ready\": true }]",
+  "yaml-to-json": "tool: TweakIt\nready: true",
+  "xml-to-json": "<tool><name>TweakIt</name><ready>true</ready></tool>",
+  "csv-table-viewer": "name,status\nTweakIt,ready",
   "json-diff": t("Cole o primeiro documento JSON…", "Paste the first JSON document…"),
+  "text-diff": t("Cole o texto original aqui…", "Paste the original text here…"),
   "regex-tester": t("Texto usado para testar a expressão…", "Text used to test the expression…"),
   "cron-expression-parser": "*/15 * * * *",
-  "html-formatter": "<main><h1>Toolsy</h1><p>Ready</p></main>",
-  "css-formatter": ".toolsy{display:grid;gap:1rem;color:#6366f1}",
-  "javascript-formatter": "const tool = { name: \"Toolsy\", ready: true };",
+  "html-formatter": "<main><h1>TweakIt</h1><p>Ready</p></main>",
+  "css-formatter": ".tweakit{display:grid;gap:1rem;color:#6366f1}",
+  "javascript-formatter": "const tool = { name: \"TweakIt\", ready: true };",
   "sql-formatter": "select id, name from tools where active = true order by name;",
-  "xml-formatter": "<tools><tool id=\"1\">Toolsy</tool></tools>",
-  "yaml-formatter": "tool: Toolsy\nfeatures:\n  - private\n  - fast",
-  "markdown-preview": "# Toolsy\n\nFerramentas rápidas, privadas e úteis.",
+  "xml-formatter": "<tools><tool id=\"1\">TweakIt</tool></tools>",
+  "yaml-formatter": "tool: TweakIt\nfeatures:\n  - private\n  - fast",
+  "markdown-preview": "# TweakIt\n\nFerramentas rápidas, privadas e úteis.",
   "chmod-calculator": t("Ex.: 755 ou u=rwx,g=rx,o=rx", "E.g. 755 or u=rwx,g=rx,o=rx"),
-  "docker-run-to-compose": "docker run --name toolsy -p 3000:3000 -e NODE_ENV=production toolsy:latest",
+  "docker-run-to-compose": "docker run --name tweakit -p 3000:3000 -e NODE_ENV=production tweakit:latest",
   "math-evaluator": "(12 + 8) * 3 ^ 2",
   "average-calculator": t("Números separados por vírgulas, espaços ou linhas…", "Numbers separated by commas, spaces, or lines…"),
   "cidr-calculator": "192.168.1.10/24",
@@ -300,7 +305,7 @@ const placeholders: Readonly<Record<string, LocalText | string>> = {
   "find-and-replace": t("Digite ou cole o texto em que deseja buscar…", "Type or paste the text you want to search…"),
   "unicode-inspector": t("Digite caracteres, símbolos ou emojis…", "Type characters, symbols, or emoji…"),
   "remove-markup": t("Cole HTML ou Markdown…", "Paste HTML or Markdown…"),
-  "url-parser": "https://user@example.com:8080/path?q=toolsy#result",
+  "url-parser": "https://user@example.com:8080/path?q=tweakit#result",
   "url-query-editor": "https://example.com/search?old=value",
   "jwt-decoder": t("Cole um JSON Web Token…", "Paste a JSON Web Token…"),
   "basic-auth-generator": t("Nome de usuário", "Username"),
@@ -663,6 +668,13 @@ function buildSpecification(tool: ToolDefinition): ToolSpecification {
 
   if (tool.id === "basic-auth-generator") inputLabel = labels.username;
   if (tool.id === "json-diff") inputLabel = labels.originalJson;
+  if (tool.id === "text-diff") {
+    inputLabel = labels.originalText;
+    controls.push(
+      checkboxControl("ignoreWhitespace", labels.ignoreWhitespace),
+      checkboxControl("ignoreCase", labels.ignoreCase),
+    );
+  }
   if (tool.id === "url-query-editor") inputLabel = labels.baseUrl;
   if (tool.id === "password-strength-analyzer") {
     inputLabel = labels.password;
@@ -696,7 +708,8 @@ function buildSpecification(tool: ToolDefinition): ToolSpecification {
 function getSecondaryDefinition(toolId: string, mode: string): SecondaryDefinition | null {
   if (toolId === "hmac-generator") return { label: labels.secret, placeholder: t("Chave usada na assinatura", "Key used for signing"), kind: "password" };
   if (toolId === "json-diff") return { label: labels.comparisonJson, placeholder: t("Cole o segundo documento JSON…", "Paste the second JSON document…"), kind: "textarea" };
-  if (toolId === "url-query-editor") return { label: labels.queryParameters, placeholder: "utm_source=toolsy\nutm_medium=web", kind: "textarea" };
+  if (toolId === "text-diff") return { label: labels.comparisonText, placeholder: t("Cole o texto para comparar…", "Paste the text to compare…"), kind: "textarea" };
+  if (toolId === "url-query-editor") return { label: labels.queryParameters, placeholder: "utm_source=tweakit\nutm_medium=web", kind: "textarea" };
   if (toolId === "basic-auth-generator") return { label: labels.password, placeholder: t("Senha", "Password"), kind: "password" };
   if (toolId === "meta-tag-generator") return { label: labels.description, placeholder: t("Descrição curta para mecanismos de busca e redes sociais", "Short description for search engines and social networks"), kind: "textarea" };
   if (toolId === "ratio-calculator") return { label: labels.secondValue, placeholder: "9", kind: "number" };
@@ -757,6 +770,18 @@ function localizeOperationMessage(message: string | undefined, locale: Locale, t
   if (!message) return "";
   if (locale === "en") return message;
   if (toolId === "json-validator" && status === "success") return "JSON válido";
+  if (toolId === "text-diff" && message === "Identical") return "Idênticos";
+  if (toolId === "text-diff" && message === "Text is too large for a safe line diff") {
+    return "O texto é grande demais para uma comparação segura linha a linha.";
+  }
+  if (toolId === "text-diff") {
+    const match = message.match(/^(\d+) added, (\d+) removed$/);
+    if (match) return `${match[1]} adicionadas, ${match[2]} removidas`;
+  }
+  if (toolId === "json-diff") {
+    const match = message.match(/^(\d+) changes$/);
+    if (match) return match[1] === "1" ? "1 alteração" : `${match[1]} alterações`;
+  }
   const replacements: readonly [RegExp, string][] = [
     [/Invalid date/i, "Data inválida"],
     [/Invalid Roman numeral/i, "Número romano inválido"],
@@ -1167,6 +1192,141 @@ function MarkdownPreview({ source, label }: { source: string; label: string }) {
   return <article className="generic-tool-markdown-preview" aria-label={label}>{blocks}</article>;
 }
 
+function parsePackedDiffSegments(value: string | undefined): readonly { kind: "equal" | "add" | "remove"; text: string }[] {
+  if (!value) return [];
+  try {
+    const packed = JSON.parse(value) as unknown;
+    if (!Array.isArray(packed)) return [];
+    return packed.flatMap(item => {
+      if (!Array.isArray(item) || item.length < 2) return [];
+      const code = String(item[0]);
+      const text = String(item[1] ?? "");
+      const kind = code === "a" ? "add" : code === "r" ? "remove" : "equal";
+      return text ? [{ kind: kind as "equal" | "add" | "remove", text }] : [];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function DiffSegmentText({
+  segments,
+  fallback,
+  tone,
+}: {
+  segments: readonly { kind: "equal" | "add" | "remove"; text: string }[];
+  fallback: string;
+  tone: "add" | "remove" | "neutral";
+}) {
+  if (!segments.length) return <code className="textDiffResult__text">{fallback.length ? fallback : " "}</code>;
+  return (
+    <code className="textDiffResult__text">
+      {segments.map((segment, index) => {
+        if (segment.kind === "equal") {
+          return <span key={`equal-${index}`}>{segment.text}</span>;
+        }
+        const highlight = tone === "neutral"
+          ? segment.kind === "add" ? "added" : "removed"
+          : tone === "add" ? "added" : "removed";
+        return <mark className={`textDiffResult__change textDiffResult__change--${highlight}`} key={`${segment.kind}-${index}`}>{segment.text}</mark>;
+      })}
+    </code>
+  );
+}
+
+function TextDiffResult({
+  rows,
+  locale,
+  emptyLabel,
+}: {
+  rows: readonly (readonly string[])[];
+  locale: Locale;
+  emptyLabel: string;
+}) {
+  const dataRows = rows.slice(1);
+  if (dataRows.length === 0) return <p className="generic-tool-empty-result">{emptyLabel}</p>;
+  const statusLabels = locale === "pt-BR"
+    ? { equal: "Igual", add: "Adicionada", remove: "Removida" }
+    : { equal: "Same", add: "Added", remove: "Removed" };
+
+  return (
+    <div className="textDiffResult" role="table" aria-label={locale === "pt-BR" ? "Diferenças de texto" : "Text differences"}>
+      {dataRows.map((row, index) => {
+        const kind = row[0] ?? "equal";
+        const modifier = kind === "add" ? "added" : kind === "remove" ? "removed" : "equal";
+        const marker = kind === "add" ? "+" : kind === "remove" ? "-" : " ";
+        const left = row[1] || "·";
+        const right = row[2] || "·";
+        const text = row[3] ?? "";
+        const segments = parsePackedDiffSegments(row[4]);
+        const statusLabel = kind === "add" ? statusLabels.add : kind === "remove" ? statusLabels.remove : statusLabels.equal;
+        return (
+          <div className={`textDiffResult__line textDiffResult__line--${modifier}`} role="row" key={`${kind}-${index}-${left}-${right}`}>
+            <span className="textDiffResult__marker" aria-label={statusLabel}>{marker}</span>
+            <span className="textDiffResult__lineNumber" title="A">{left}</span>
+            <span className="textDiffResult__lineNumber" title="B">{right}</span>
+            <DiffSegmentText
+              segments={segments}
+              fallback={text}
+              tone={kind === "add" ? "add" : kind === "remove" ? "remove" : "neutral"}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function JsonDiffResult({
+  rows,
+  locale,
+  emptyLabel,
+}: {
+  rows: readonly (readonly string[])[];
+  locale: Locale;
+  emptyLabel: string;
+}) {
+  const dataRows = rows.slice(1);
+  if (dataRows.length === 0) return <p className="generic-tool-empty-result">{emptyLabel}</p>;
+  const labels = locale === "pt-BR"
+    ? { added: "Adicionado", removed: "Removido", changed: "Alterado", before: "Antes", after: "Depois", path: "Caminho" }
+    : { added: "Added", removed: "Removed", changed: "Changed", before: "Before", after: "After", path: "Path" };
+
+  return (
+    <div className="jsonDiffResult" aria-label={locale === "pt-BR" ? "Diferenças JSON" : "JSON differences"}>
+      {dataRows.map((row, index) => {
+        const type = row[0] ?? "changed";
+        const path = row[1] ?? "$";
+        const before = row[2] ?? "";
+        const after = row[3] ?? "";
+        const beforeSegments = parsePackedDiffSegments(row[4]);
+        const afterSegments = parsePackedDiffSegments(row[5]);
+        const typeLabel = type === "added" ? labels.added : type === "removed" ? labels.removed : labels.changed;
+        return (
+          <article className={`jsonDiffResult__change jsonDiffResult__change--${type}`} key={`${type}-${path}-${index}`}>
+            <header className="jsonDiffResult__heading">
+              <span className="jsonDiffResult__type">{typeLabel}</span>
+              <code className="jsonDiffResult__path" title={labels.path}>{path}</code>
+            </header>
+            {type !== "added" && (
+              <div className="jsonDiffResult__value jsonDiffResult__value--before">
+                <span className="jsonDiffResult__valueLabel">{labels.before}</span>
+                <DiffSegmentText segments={beforeSegments} fallback={before} tone="remove" />
+              </div>
+            )}
+            {type !== "removed" && (
+              <div className="jsonDiffResult__value jsonDiffResult__value--after">
+                <span className="jsonDiffResult__valueLabel">{labels.after}</span>
+                <DiffSegmentText segments={afterSegments} fallback={after} tone="add" />
+              </div>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
 function ResultTable({
   rows,
   locale,
@@ -1384,13 +1544,17 @@ function GenericToolWorkspace({ tool }: { tool: ToolDefinition }) {
             <strong>{isMarkdown ? ui.markdownPreview : ui.result}</strong>
             <div className="generic-tool-actions io-actions">
               <CopyButton value={execution.output} />
-              <DownloadButton value={execution.output} fileName={`toolsy-${tool.id}.${outputExtension}`} />
+              <DownloadButton value={execution.output} fileName={`tweakit-${tool.id}.${outputExtension}`} />
               {specification.inputKind === "none" && <ClearButton onClear={clear} />}
             </div>
           </div>
           {color && <div className="generic-tool-color-preview" aria-label={ui.colorPreview}><span className="generic-tool-color-swatch" style={{ backgroundColor: color }} /><strong>{color}</strong></div>}
           {isMarkdown ? (
             execution.output ? <MarkdownPreview source={execution.output} label={ui.markdownPreview} /> : <p className="generic-tool-empty-result">{ui.resultPlaceholder}</p>
+          ) : tool.id === "text-diff" && rows.length ? (
+            <TextDiffResult rows={rows} locale={locale} emptyLabel={ui.resultPlaceholder} />
+          ) : tool.id === "json-diff" && rows.length ? (
+            <JsonDiffResult rows={rows} locale={locale} emptyLabel={ui.resultPlaceholder} />
           ) : rows.length ? (
             <>
               <ResultTable rows={rows} locale={locale} caption={isRegex ? ui.matches : ui.table} sortable={tool.id === "csv-table-viewer"} firstRowHeader={hasHeader} />

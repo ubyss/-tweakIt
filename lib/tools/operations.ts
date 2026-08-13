@@ -411,6 +411,247 @@ function result(output: string, status?: "success" | "error", message?: string):
   return { output, status, message };
 }
 
+type DiffSegmentKind = "equal" | "add" | "remove";
+
+type DiffSegment = {
+  kind: DiffSegmentKind;
+  text: string;
+};
+
+type TextDiffLine = {
+  kind: "equal" | "add" | "remove";
+  text: string;
+  left?: number;
+  right?: number;
+  segments?: readonly DiffSegment[];
+};
+
+type PackedDiffSegment = readonly ["e" | "a" | "r", string];
+
+function normalizeDiffLine(line: string, ignoreWhitespace: boolean, ignoreCase: boolean) {
+  let value = line;
+  if (ignoreWhitespace) value = value.trim().replace(/\s+/g, " ");
+  if (ignoreCase) value = value.toLocaleLowerCase();
+  return value;
+}
+
+function tokenizeForInlineDiff(value: string) {
+  return value.match(/\s+|[^\s]+/gu) ?? (value ? [value] : []);
+}
+
+function unitsForInlineDiff(value: string) {
+  if (value.length <= 120) return Array.from(value);
+  return tokenizeForInlineDiff(value);
+}
+
+function packDiffSegments(segments: readonly DiffSegment[]): string {
+  const packed: PackedDiffSegment[] = segments.map(segment => [
+    segment.kind === "add" ? "a" : segment.kind === "remove" ? "r" : "e",
+    segment.text,
+  ]);
+  return JSON.stringify(packed);
+}
+
+function mergeDiffSegments(segments: readonly DiffSegment[]): DiffSegment[] {
+  const merged: DiffSegment[] = [];
+  for (const segment of segments) {
+    if (!segment.text) continue;
+    const previous = merged[merged.length - 1];
+    if (previous && previous.kind === segment.kind) {
+      previous.text += segment.text;
+      continue;
+    }
+    merged.push({ kind: segment.kind, text: segment.text });
+  }
+  return merged;
+}
+
+function diffInlineSegments(leftText: string, rightText: string): { left: DiffSegment[]; right: DiffSegment[] } {
+  if (leftText === rightText) {
+    return {
+      left: leftText ? [{ kind: "equal", text: leftText }] : [],
+      right: rightText ? [{ kind: "equal", text: rightText }] : [],
+    };
+  }
+
+  const leftUnits = unitsForInlineDiff(leftText);
+  const rightUnits = unitsForInlineDiff(rightText);
+  if (leftUnits.length * rightUnits.length > 250_000) {
+    return {
+      left: leftText ? [{ kind: "remove", text: leftText }] : [],
+      right: rightText ? [{ kind: "add", text: rightText }] : [],
+    };
+  }
+
+  const lengths: Uint16Array[] = Array.from({ length: leftUnits.length + 1 }, () => new Uint16Array(rightUnits.length + 1));
+  for (let leftIndex = leftUnits.length - 1; leftIndex >= 0; leftIndex -= 1) {
+    for (let rightIndex = rightUnits.length - 1; rightIndex >= 0; rightIndex -= 1) {
+      lengths[leftIndex][rightIndex] = leftUnits[leftIndex] === rightUnits[rightIndex]
+        ? lengths[leftIndex + 1][rightIndex + 1] + 1
+        : Math.max(lengths[leftIndex + 1][rightIndex], lengths[leftIndex][rightIndex + 1]);
+    }
+  }
+
+  const leftSegments: DiffSegment[] = [];
+  const rightSegments: DiffSegment[] = [];
+  let leftIndex = 0;
+  let rightIndex = 0;
+  while (leftIndex < leftUnits.length && rightIndex < rightUnits.length) {
+    if (leftUnits[leftIndex] === rightUnits[rightIndex]) {
+      leftSegments.push({ kind: "equal", text: leftUnits[leftIndex] });
+      rightSegments.push({ kind: "equal", text: rightUnits[rightIndex] });
+      leftIndex += 1;
+      rightIndex += 1;
+      continue;
+    }
+    if (lengths[leftIndex + 1][rightIndex] >= lengths[leftIndex][rightIndex + 1]) {
+      leftSegments.push({ kind: "remove", text: leftUnits[leftIndex] });
+      leftIndex += 1;
+      continue;
+    }
+    rightSegments.push({ kind: "add", text: rightUnits[rightIndex] });
+    rightIndex += 1;
+  }
+  while (leftIndex < leftUnits.length) {
+    leftSegments.push({ kind: "remove", text: leftUnits[leftIndex] });
+    leftIndex += 1;
+  }
+  while (rightIndex < rightUnits.length) {
+    rightSegments.push({ kind: "add", text: rightUnits[rightIndex] });
+    rightIndex += 1;
+  }
+
+  return {
+    left: mergeDiffSegments(leftSegments),
+    right: mergeDiffSegments(rightSegments),
+  };
+}
+
+function diffTextLines(leftText: string, rightText: string, ignoreWhitespace = false, ignoreCase = false): TextDiffLine[] {
+  const left = leftText.split(/\r\n|\n|\r/);
+  const right = rightText.split(/\r\n|\n|\r/);
+  const leftCount = left.length;
+  const rightCount = right.length;
+  if (leftCount * rightCount > 4_000_000) throw new Error("Text is too large for a safe line diff");
+
+  const leftKeys = left.map(line => normalizeDiffLine(line, ignoreWhitespace, ignoreCase));
+  const rightKeys = right.map(line => normalizeDiffLine(line, ignoreWhitespace, ignoreCase));
+  const lengths: Uint16Array[] = Array.from({ length: leftCount + 1 }, () => new Uint16Array(rightCount + 1));
+
+  for (let leftIndex = leftCount - 1; leftIndex >= 0; leftIndex -= 1) {
+    for (let rightIndex = rightCount - 1; rightIndex >= 0; rightIndex -= 1) {
+      lengths[leftIndex][rightIndex] = leftKeys[leftIndex] === rightKeys[rightIndex]
+        ? lengths[leftIndex + 1][rightIndex + 1] + 1
+        : Math.max(lengths[leftIndex + 1][rightIndex], lengths[leftIndex][rightIndex + 1]);
+    }
+  }
+
+  const lines: TextDiffLine[] = [];
+  let leftIndex = 0;
+  let rightIndex = 0;
+  while (leftIndex < leftCount && rightIndex < rightCount) {
+    if (leftKeys[leftIndex] === rightKeys[rightIndex]) {
+      lines.push({ kind: "equal", text: left[leftIndex], left: leftIndex + 1, right: rightIndex + 1 });
+      leftIndex += 1;
+      rightIndex += 1;
+      continue;
+    }
+    if (lengths[leftIndex + 1][rightIndex] >= lengths[leftIndex][rightIndex + 1]) {
+      lines.push({ kind: "remove", text: left[leftIndex], left: leftIndex + 1 });
+      leftIndex += 1;
+      continue;
+    }
+    lines.push({ kind: "add", text: right[rightIndex], right: rightIndex + 1 });
+    rightIndex += 1;
+  }
+  while (leftIndex < leftCount) {
+    lines.push({ kind: "remove", text: left[leftIndex], left: leftIndex + 1 });
+    leftIndex += 1;
+  }
+  while (rightIndex < rightCount) {
+    lines.push({ kind: "add", text: right[rightIndex], right: rightIndex + 1 });
+    rightIndex += 1;
+  }
+  return annotateInlineDiff(lines);
+}
+
+function annotateInlineDiff(lines: readonly TextDiffLine[]): TextDiffLine[] {
+  const annotated: TextDiffLine[] = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const current = lines[index];
+    const next = lines[index + 1];
+    if (current.kind === "remove" && next?.kind === "add") {
+      const inline = diffInlineSegments(current.text, next.text);
+      annotated.push({ ...current, segments: inline.left });
+      annotated.push({ ...next, segments: inline.right });
+      index += 1;
+      continue;
+    }
+    if (current.kind === "add") {
+      annotated.push({ ...current, segments: current.text ? [{ kind: "add", text: current.text }] : [] });
+      continue;
+    }
+    if (current.kind === "remove") {
+      annotated.push({ ...current, segments: current.text ? [{ kind: "remove", text: current.text }] : [] });
+      continue;
+    }
+    annotated.push({ ...current, segments: current.text ? [{ kind: "equal", text: current.text }] : [] });
+  }
+  return annotated;
+}
+
+function formatUnifiedDiff(lines: readonly TextDiffLine[]) {
+  return lines.map(line => {
+    if (line.kind === "add") return `+ ${line.text}`;
+    if (line.kind === "remove") return `- ${line.text}`;
+    return `  ${line.text}`;
+  }).join("\n");
+}
+
+type JsonChange = {
+  type: "added" | "removed" | "changed";
+  path: string;
+  before: unknown;
+  after: unknown;
+};
+
+function jsonPath(parent: string, key: string | number) {
+  if (typeof key === "number") return `${parent}[${key}]`;
+  return parent ? `${parent}.${key}` : key;
+}
+
+function collectJsonChanges(left: unknown, right: unknown, path = ""): JsonChange[] {
+  if (Object.is(left, right)) return [];
+  const leftType = left === null ? "null" : Array.isArray(left) ? "array" : typeof left;
+  const rightType = right === null ? "null" : Array.isArray(right) ? "array" : typeof right;
+
+  if (left === undefined) return [{ type: "added", path: path || "$", before: undefined, after: right }];
+  if (right === undefined) return [{ type: "removed", path: path || "$", before: left, after: undefined }];
+  if (leftType !== rightType || leftType !== "object" && leftType !== "array" || rightType !== "object" && rightType !== "array") {
+    return [{ type: "changed", path: path || "$", before: left, after: right }];
+  }
+
+  if (Array.isArray(left) && Array.isArray(right)) {
+    const max = Math.max(left.length, right.length);
+    const changes: JsonChange[] = [];
+    for (let index = 0; index < max; index += 1) {
+      changes.push(...collectJsonChanges(left[index], right[index], jsonPath(path || "$", index)));
+    }
+    return changes;
+  }
+
+  const leftObject = left as Record<string, unknown>;
+  const rightObject = right as Record<string, unknown>;
+  const keys = Array.from(new Set([...Object.keys(leftObject), ...Object.keys(rightObject)])).sort();
+  return keys.flatMap(key => collectJsonChanges(leftObject[key], rightObject[key], jsonPath(path, key)));
+}
+
+function formatJsonValue(value: unknown) {
+  if (value === undefined) return "";
+  if (typeof value === "string") return value;
+  return JSON.stringify(value, null, 2);
+}
+
 export async function executeTool(id: string, input: string, options: ToolOptions = {}, secondary = ""): Promise<ToolExecution> {
   const mode = String(options.mode ?? "");
   try {
@@ -449,7 +690,57 @@ export async function executeTool(id: string, input: string, options: ToolOption
     if (id === "xml-to-json") { const documentValue = new DOMParser().parseFromString(input, "application/xml"); if (documentValue.querySelector("parsererror") || !documentValue.documentElement) throw new Error("Invalid XML"); return result(JSON.stringify({ [documentValue.documentElement.tagName]: xmlNodeToValue(documentValue.documentElement) }, null, 2)); }
     if (id === "json-to-csv") return result(toCsv(JSON.parse(input)));
     if (id === "csv-table-viewer") { const rows = parseCsv(input, String(options.delimiter ?? ",")); return { output: rows.map(row => row.join(" | ")).join("\n"), rows }; }
-    if (id === "json-diff") { const left = JSON.parse(input) as Record<string, unknown>; const right = JSON.parse(secondary) as Record<string, unknown>; const keys = Array.from(new Set([...Object.keys(left), ...Object.keys(right)])).sort(); const changes = keys.filter(key => JSON.stringify(left[key]) !== JSON.stringify(right[key])).map(key => ({ path: key, before: left[key], after: right[key], type: !(key in left) ? "added" : !(key in right) ? "removed" : "changed" })); return result(JSON.stringify(changes, null, 2), "success", `${changes.length} changes`); }
+    if (id === "json-diff") {
+      const left = JSON.parse(input) as unknown;
+      const right = JSON.parse(secondary) as unknown;
+      const changes = collectJsonChanges(left, right);
+      const rows = [
+        ["type", "path", "before", "after", "beforeSegments", "afterSegments"],
+        ...changes.map(change => {
+          const beforeText = formatJsonValue(change.before);
+          const afterText = formatJsonValue(change.after);
+          const inline = change.type === "changed"
+            ? diffInlineSegments(beforeText, afterText)
+            : {
+              left: beforeText ? [{ kind: "remove" as const, text: beforeText }] : [],
+              right: afterText ? [{ kind: "add" as const, text: afterText }] : [],
+            };
+          return [
+            change.type,
+            change.path,
+            beforeText,
+            afterText,
+            packDiffSegments(inline.left),
+            packDiffSegments(inline.right),
+          ];
+        }),
+      ];
+      return {
+        output: JSON.stringify(changes.map(({ type, path, before, after }) => ({ type, path, before, after })), null, 2),
+        rows,
+        status: "success",
+        message: `${changes.length} changes`,
+      };
+    }
+    if (id === "text-diff") {
+      const lines = diffTextLines(input, secondary, options.ignoreWhitespace === true, options.ignoreCase === true);
+      const added = lines.filter(line => line.kind === "add").length;
+      const removed = lines.filter(line => line.kind === "remove").length;
+      const rows = [
+        ["status", "left", "right", "text", "segments"],
+        ...lines.map(line => [
+          line.kind,
+          line.left ? String(line.left) : "",
+          line.right ? String(line.right) : "",
+          line.text,
+          packDiffSegments(line.segments ?? [{ kind: line.kind === "equal" ? "equal" : line.kind === "add" ? "add" : "remove", text: line.text }]),
+        ]),
+      ];
+      const message = added === 0 && removed === 0
+        ? "Identical"
+        : `${added} added, ${removed} removed`;
+      return { output: formatUnifiedDiff(lines), rows, status: "success", message };
+    }
     if (["html-formatter", "xml-formatter", "svg-optimizer"].includes(id)) { const type = id === "html-formatter" ? "html" : id === "svg-optimizer" ? "svg" : "xml"; return result(mode === "minify" ? minifyMarkup(input) : formatMarkup(input, type)); }
     if (id === "css-formatter") return result(mode === "minify" ? minifyCode(input, "css") : formatCss(input));
     if (id === "javascript-formatter") return result(mode === "minify" ? minifyCode(input, "js") : formatJavascript(input));

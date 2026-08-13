@@ -20,7 +20,7 @@ test("catalog invariants remain valid", async () => {
     server.ssrLoadModule("/lib/catalog/index.ts"),
   ]);
   assert.equal(categories.length, 10);
-  assert.equal(tools.length, 85);
+  assert.equal(tools.length, 86);
   assert.deepEqual(validateCatalog(), { valid: true, errors: [] });
 });
 
