@@ -100,4 +100,26 @@ export const converterTools = [
     tags: ["number", "roman", "conversion"],
     relatedTools: ["number-base-converter", "math-evaluator", "random-number-generator"],
   }),
+  defineTool({
+    id: "currency-converter",
+    category: "converters",
+    icon: "banknote",
+    kind: "converter",
+    processing: "network",
+    config: { converter: "currency", provider: "frankfurter" },
+    pt: {
+      name: "Conversor de Moeda",
+      description: "Converta valores com cotações atualizadas de bancos centrais.",
+      aliases: ["câmbio", "converter dólar", "euro para real", "cotação"],
+      keywords: ["moeda", "exchange rate", "usd", "brl", "eur", "gbp", "taxa de câmbio", "frankfurter"],
+    },
+    en: {
+      name: "Currency Converter",
+      description: "Convert amounts using up-to-date central bank exchange rates.",
+      aliases: ["forex", "convert dollar", "euro to real", "exchange rate"],
+      keywords: ["currency", "exchange rate", "usd", "brl", "eur", "gbp", "fx", "frankfurter"],
+    },
+    tags: ["currency", "money", "exchange"],
+    relatedTools: ["percentage-calculator", "number-base-converter", "math-evaluator"],
+  }),
 ] as const;

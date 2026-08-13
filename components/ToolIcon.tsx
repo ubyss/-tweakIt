@@ -3,6 +3,7 @@
 import type { LucideIcon, LucideProps } from "lucide-react";
 import {
   AlignLeft,
+  Banknote,
   BetweenHorizontalStart,
   Binary,
   Box,
@@ -113,6 +114,7 @@ const icons: Record<string, LucideIcon> = {
   files: Files,
   "git-compare": GitCompare,
   "wand-sparkles": WandSparkles,
+  banknote: Banknote,
 };
 
 export function ToolIcon({ name, ...props }: { name: string } & LucideProps) {

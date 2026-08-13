@@ -66,7 +66,8 @@ export type IconKey =
   | "brackets"
   | "files"
   | "git-compare"
-  | "wand-sparkles";
+  | "wand-sparkles"
+  | "banknote";
 
 export type ToolKind =
   | "calculator"
@@ -107,7 +108,7 @@ export interface ToolDefinition {
   tags: readonly string[];
   relatedTools: readonly string[];
   isFavoriteCompatible: boolean;
-  processing: "local";
+  processing: "local" | "network";
 }
 
 export interface CategoryDefinition {

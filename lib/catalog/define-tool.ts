@@ -17,6 +17,7 @@ interface ToolInput {
   tags: readonly string[];
   relatedTools: readonly string[];
   config?: Readonly<Record<string, unknown>>;
+  processing?: ToolDefinition["processing"];
 }
 
 export function defineTool(input: ToolInput): ToolDefinition {
@@ -34,6 +35,6 @@ export function defineTool(input: ToolInput): ToolDefinition {
     tags: input.tags,
     relatedTools: input.relatedTools,
     isFavoriteCompatible: true,
-    processing: "local",
+    processing: input.processing ?? "local",
   };
 }
