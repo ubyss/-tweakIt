@@ -2422,8 +2422,21 @@ kbd {
   color: var(--bg);
 }
 
+.formatter-button--primary:hover:not(:disabled) {
+  border-color: var(--text);
+  background: color-mix(in srgb, var(--text) 88%, var(--accent));
+  color: var(--bg);
+}
+
 .formatter-button--danger,
 .formatter-icon-button--danger {
+  color: var(--danger);
+}
+
+.formatter-button--danger:hover:not(:disabled),
+.formatter-icon-button--danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+  background: var(--danger-soft);
   color: var(--danger);
 }
 
@@ -3929,8 +3942,11 @@ body {
 }
 
 .button-primary:hover:not(:disabled),
-.formatter-button--primary:hover:not(:disabled) {
+.formatter-button--primary:hover:not(:disabled),
+.generic-tool-run:hover:not(:disabled) {
+  border-color: #000000;
   background: #000000;
+  color: #ffffff;
 }
 
 .field input,
