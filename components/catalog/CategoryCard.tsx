@@ -4,6 +4,7 @@ import { ArrowUpRight, ChevronDown, LayoutGrid } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApp } from "@/lib/app-context";
 import {
+  getCompactToolNames,
   localizeCategory,
   localizeTool,
   toolCountByCategory,
@@ -25,6 +26,8 @@ export function CategoryCard({ category, open, onToggle, onClose }: CategoryCard
   const localized = localizeCategory(category, locale);
   const count = toolCountByCategory[category.id];
   const categoryTools = tools.filter((tool) => tool.category === category.id);
+  const toolNames = categoryTools.map((tool) => localizeTool(tool, locale).name);
+  const compactToolNames = getCompactToolNames(toolNames, locale);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,9 +64,9 @@ export function CategoryCard({ category, open, onToggle, onClose }: CategoryCard
       </button>
       <div className="category-card-popover" hidden={!open}>
         <div className="category-card-tools">
-          {categoryTools.map((tool) => (
-            <HardLink key={tool.id} href={`/tools/${tool.slug}`} onNavigate={onClose}>
-              {localizeTool(tool, locale).name}
+          {categoryTools.map((tool, index) => (
+            <HardLink key={tool.id} href={`/tools/${tool.slug}`} onNavigate={onClose} title={toolNames[index]}>
+              {compactToolNames[index]}
               <ArrowUpRight size={13} />
             </HardLink>
           ))}

@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Command, Heart, Home, LayoutGrid, Menu, Monitor, Moon, Search, Sun, X } from "lucide-react";
 import { useApp, type Theme } from "@/lib/app-context";
-import { categories, localizeCategory, localizeTool, tools } from "@/lib/catalog";
+import { categories, getCompactToolNames, localizeCategory, localizeTool, tools } from "@/lib/catalog";
 import { HardLink } from "./HardLink";
 import { ToolIcon } from "./ToolIcon";
 import { CommandPalette } from "./search/CommandPalette";
@@ -78,6 +78,8 @@ function SidebarContent({ close }: { close?: () => void }) {
       <p>{copy.nav.categories}</p>
       {categories.map((category) => {
         const categoryTools = tools.filter((tool) => tool.category === category.id);
+        const toolNames = categoryTools.map((tool) => localizeTool(tool, locale).name);
+        const compactToolNames = getCompactToolNames(toolNames, locale);
         const isOpen = openCategoryId === category.id;
         return (
           <div className={`side-category${isOpen ? " is-open" : ""}`} data-category={category.id} key={category.id}>
@@ -93,6 +95,18 @@ function SidebarContent({ close }: { close?: () => void }) {
             </button>
             <div className="side-category-panel" aria-hidden={!isOpen}>
               <div className="side-category-tools">
+                {categoryTools.map((tool, index) => (
+                  <HardLink
+                    key={tool.id}
+                    href={`/tools/${tool.slug}`}
+                    onNavigate={close}
+                    title={toolNames[index]}
+                    className={pathname === `/tools/${tool.slug}` ? "is-active" : ""}
+                    tabIndex={isOpen ? undefined : -1}
+                  >
+                    {compactToolNames[index]}
+                  </HardLink>
+                ))}
                 <HardLink
                   href={`/category/${category.slug}`}
                   onNavigate={close}
@@ -102,17 +116,6 @@ function SidebarContent({ close }: { close?: () => void }) {
                   <LayoutGrid size={14} />
                   <span>{locale === "pt-BR" ? "Ver todas" : "View all"}</span>
                 </HardLink>
-                {categoryTools.map((tool) => (
-                  <HardLink
-                    key={tool.id}
-                    href={`/tools/${tool.slug}`}
-                    onNavigate={close}
-                    className={pathname === `/tools/${tool.slug}` ? "is-active" : ""}
-                    tabIndex={isOpen ? undefined : -1}
-                  >
-                    {localizeTool(tool, locale).name}
-                  </HardLink>
-                ))}
               </div>
             </div>
           </div>

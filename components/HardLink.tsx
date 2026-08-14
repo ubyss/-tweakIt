@@ -8,6 +8,7 @@ type HardLinkProps = {
   children: ReactNode;
   onNavigate?: () => void;
   tabIndex?: number;
+  title?: string;
   "aria-label"?: string;
   "data-nav"?: string;
 };
@@ -23,6 +24,7 @@ export function HardLink({
   children,
   onNavigate,
   tabIndex,
+  title,
   "aria-label": ariaLabel,
   "data-nav": dataNav,
 }: HardLinkProps) {
@@ -41,6 +43,7 @@ export function HardLink({
       href={href}
       className={className}
       tabIndex={tabIndex}
+      title={title}
       aria-label={ariaLabel}
       data-nav={dataNav}
       onClick={handleClick}

@@ -19,6 +19,7 @@ import type {
 } from "./types";
 
 export { categories };
+export { getCompactToolNames } from "./tool-labels";
 export type {
   CategoryDefinition,
   CategoryId,
